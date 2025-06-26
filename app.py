@@ -7,7 +7,8 @@ from PIL import Image, ImageDraw
 import os
 import cv2
 import numpy as np
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+# Import WebRtcMode for deployment
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, WebRtcMode
 import json
 import pandas as pd
 import time
@@ -196,19 +197,20 @@ def handle_image_detection(model: YOLO, confidence_threshold: float):
     )
 
     if uploaded_file is None:
+        # If the file uploader is cleared, also clear the state associated with the old file.
+        if 'current_file_id' in st.session_state:
+            del st.session_state['current_file_id']
+        if 'reported_falses' in st.session_state:
+            del st.session_state['reported_falses']
         return
 
-    # --- FIX for AttributeError ---
-    # Initialize session state for feedback tracking if it doesn't exist.
-    # This must be done before it's accessed in other functions.
-    if 'reported_falses' not in st.session_state:
-        st.session_state.reported_falses = set()
-
-    # Reset the feedback set only when a new file is uploaded.
     file_id = f"{uploaded_file.name}-{uploaded_file.size}"
-    if "current_file_id" not in st.session_state or st.session_state.current_file_id != file_id:
+
+    # Check if this is a new file upload by comparing the current file_id to the one in session state.
+    # The .get() method safely returns None if 'current_file_id' doesn't exist.
+    if st.session_state.get('current_file_id') != file_id:
         st.session_state.current_file_id = file_id
-        st.session_state.reported_falses = set()
+        st.session_state.reported_falses = set()  # Initialize a fresh set for the new image.
 
     image = Image.open(uploaded_file).convert("RGB")
     image = resize_image(image)
@@ -244,7 +246,6 @@ def handle_image_detection(model: YOLO, confidence_threshold: float):
     display_object_gallery(image, results[0], uploaded_file.name)
     
     st.divider()
-    # Pass the uploaded_file object which is needed by the original feedback function
     handle_missed_object_correction(model, image, uploaded_file)
 
 
@@ -262,7 +263,6 @@ def display_object_gallery(image: Image.Image, results: Any, image_name: str):
     for i, box in enumerate(results.boxes):
         xyxy = box.xyxy[0].cpu().numpy().astype(int)
         
-        # Ensure box coordinates are valid before cropping
         if not (xyxy[0] < xyxy[2] and xyxy[1] < xyxy[3]):
             continue
 
@@ -276,7 +276,7 @@ def display_object_gallery(image: Image.Image, results: Any, image_name: str):
             st.image(padded_img, use_container_width=True)
             st.caption(f"**{class_name}** (Conf: {confidence:.2f})")
             
-            # Use .get() for safety, although initialization is now guaranteed
+            # This check is now robust because of the improved initialization logic
             is_reported = i in st.session_state.get('reported_falses', set())
             
             if st.button(
@@ -286,7 +286,6 @@ def display_object_gallery(image: Image.Image, results: Any, image_name: str):
                 use_container_width=True
             ):
                 handle_incorrect_detection_feedback(image_name, box, class_name)
-                # This line is now safe because of the initialization fix
                 st.session_state.reported_falses.add(i)
                 st.toast(f"Reported '{class_name}' as incorrect. Thank you!", icon="👍")
                 time.sleep(1)
@@ -301,39 +300,38 @@ def handle_missed_object_correction(model: YOLO, image: Image.Image, uploaded_fi
     st.subheader("✍️ Correct Missed Detections (False Negatives)")
     st.write("If the model missed an object, select its class, draw a box on the image below, and submit.")
 
-    # Use a form to group the widgets and the submit button
     with st.form(key="missed_object_form"):
         class_names = list(model.names.values())
         selected_class = st.selectbox("1. Select the class of the missed object:", class_names)
         
         fig = px.imshow(image)
         fig.update_layout(
-            dragmode="select",  # Use 'select' for drawing boxes
+            dragmode="select",
             newshape_line_color='red',
             title_text="2. Draw a box on the image",
             title_x=0.5
         )
         config = {"modeBarButtonsToAdd": ["drawrect", "eraseshape"]}
         
-        # This chart is for visual drawing; it doesn't return coordinates to the script in this setup.
         st.plotly_chart(fig, use_container_width=True, config=config)
         
-        # The submit button for the form
         submitted = st.form_submit_button("3. Submit Missed Object Feedback")
         if submitted:
-            # This function uses the original signature and saves simulated coordinates
             handle_missed_object_feedback(uploaded_file, image, selected_class)
             st.success("Thank you! Your feedback (with simulated coordinates) has been recorded.")
 
 
 def handle_webcam_detection(model: YOLO, confidence_threshold: float):
-    """Handles real-time webcam detection using streamlit-webrtc."""
+    """Handles real-time webcam detection with deployment-ready settings."""
     st.info("Click 'Start' to begin live detection from your webcam. The stream may take a few seconds to initialize.")
+    # FIX for Deployment: Use SENDRECV mode for cloud environments.
     webrtc_streamer(
-        key="webcam",
-        video_transformer_factory=lambda: VideoTransformer(model, confidence_threshold),
+        key="webcam-streamer",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+        video_processor_factory=lambda: VideoTransformer(model, confidence_threshold),
         media_stream_constraints={"video": True, "audio": False},
-        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+        async_processing=True,
     )
 
 
@@ -592,8 +590,6 @@ def main():
         
         latest_model_name = list(available_models.keys())[0]
         
-        # --- FIX for UnboundLocalError ---
-        # Determine the selected_model_name *before* it is used.
         if st.session_state.get('show_model_selector', False):
             selected_model_name = st.selectbox(
                 "Model Version",
@@ -606,9 +602,7 @@ def main():
         st.info(f"Current Model: **{selected_model_name}**")
         
         if st.button("Select Other Model Versions"):
-            # Toggle the state
             st.session_state.show_model_selector = not st.session_state.get('show_model_selector', False)
-            # Rerun the app to reflect the change immediately
             st.rerun()
             
         run_path = available_models[selected_model_name]
