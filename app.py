@@ -193,11 +193,10 @@ def handle_live_demo(model: YOLO, confidence_threshold: float):
 def handle_image_detection(model: YOLO, confidence_threshold: float):
     """Manages the image upload, detection, and feedback workflow."""
     uploaded_file = st.file_uploader(
-        "Upload an Image", type=["jpg", "jpeg", "png"], label_visibility="collapsed"
+        "Upload an Image", type=["jpg", "jpeg", "png"], label_visibility="collapsed", key="file_uploader"
     )
 
     if uploaded_file is None:
-        # If the file uploader is cleared, also clear the state associated with the old file.
         if 'current_file_id' in st.session_state:
             del st.session_state['current_file_id']
         if 'reported_falses' in st.session_state:
@@ -206,11 +205,9 @@ def handle_image_detection(model: YOLO, confidence_threshold: float):
 
     file_id = f"{uploaded_file.name}-{uploaded_file.size}"
 
-    # Check if this is a new file upload by comparing the current file_id to the one in session state.
-    # The .get() method safely returns None if 'current_file_id' doesn't exist.
     if st.session_state.get('current_file_id') != file_id:
         st.session_state.current_file_id = file_id
-        st.session_state.reported_falses = set()  # Initialize a fresh set for the new image.
+        st.session_state.reported_falses = set()
 
     image = Image.open(uploaded_file).convert("RGB")
     image = resize_image(image)
@@ -230,7 +227,6 @@ def handle_image_detection(model: YOLO, confidence_threshold: float):
         st.write("#### Detected Image")
         st.image(res_plotted_rgb, use_container_width=True)
         
-        # Provide a download button for the annotated image
         _, buf = cv2.imencode(".png", res_plotted_bgr)
         st.download_button(
             "Download Annotated Image",
@@ -276,7 +272,6 @@ def display_object_gallery(image: Image.Image, results: Any, image_name: str):
             st.image(padded_img, use_container_width=True)
             st.caption(f"**{class_name}** (Conf: {confidence:.2f})")
             
-            # This check is now robust because of the improved initialization logic
             is_reported = i in st.session_state.get('reported_falses', set())
             
             if st.button(
@@ -322,13 +317,22 @@ def handle_missed_object_correction(model: YOLO, image: Image.Image, uploaded_fi
 
 
 def handle_webcam_detection(model: YOLO, confidence_threshold: float):
-    """Handles real-time webcam detection with deployment-ready settings."""
+    """Handles real-time webcam detection with a more robust configuration for deployment."""
     st.info("Click 'Start' to begin live detection from your webcam. The stream may take a few seconds to initialize.")
-    # FIX for Deployment: Use SENDRECV mode for cloud environments.
+    
+    # A more robust RTC configuration with multiple STUN servers for better connectivity.
+    rtc_configuration = {
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {"urls": ["stun:stun1.l.google.com:19302"]},
+            {"urls": ["stun:stun2.l.google.com:19302"]},
+        ]
+    }
+    
     webrtc_streamer(
         key="webcam-streamer",
         mode=WebRtcMode.SENDRECV,
-        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+        rtc_configuration=rtc_configuration,
         video_processor_factory=lambda: VideoTransformer(model, confidence_threshold),
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
