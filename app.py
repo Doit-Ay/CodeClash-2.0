@@ -1,15 +1,25 @@
 # EVA Guardian - Object Detection Dashboard
 # Improved Version with functional feedback loops and UX enhancements.
-import os
+
+import os, sys, subprocess
+
+# --- Environment Fixes ---
+# Silence OpenCV logs and prevent OpenMP duplication errors
 os.environ["OPENCV_LOG_LEVEL"] = "ERROR"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+# Ensure only headless OpenCV is active (remove GUI version if installed)
+subprocess.run(
+    [sys.executable, "-m", "pip", "uninstall", "-y", "opencv-python"],
+    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+)
+
+# --- Imports ---
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image, ImageDraw
-import os
 import cv2
 import numpy as np
-# Import WebRtcMode for deployment
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase, WebRtcMode
 import json
 import pandas as pd
@@ -17,6 +27,7 @@ import time
 import plotly.express as px
 from io import BytesIO
 from typing import Dict, List, Any, Optional, Tuple, Set
+
 
 # --- PAGE CONFIGURATION (with Dark Mode as default) ---
 st.set_page_config(
