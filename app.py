@@ -436,16 +436,7 @@ def handle_about_section():
         - The "Performance Deep Dive" tab provides a full suite of analysis graphs, including the **Confusion Matrix** and **loss curves**, for a complete technical overview.
         """)
 
-    st.header("👥 The Developers")
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.info("**Aditya Yadav**")
-    with col2:
-        st.info("**Lakshya Sabharwal**")
-    with col3:
-        st.info("**Shorya Mishra**")
-    with col4:
-        st.info("**Vidisha Gupta**")
+   
 
 
 # --- FEEDBACK HANDLING LOGIC (as per user's original code) ---
