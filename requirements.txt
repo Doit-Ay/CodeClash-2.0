@@ -1,19 +1,17 @@
 streamlit>=1.37
 
-# Install Ultralytics without auto-deps so it won't pull opencv-python
-ultralytics==8.3.30 --no-deps
-
-# CPU-only PyTorch (Streamlit Cloud)
+# Ultralytics + CPU-only PyTorch
+ultralytics==8.3.30
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.3.1+cpu
 torchvision==0.18.1+cpu
 torchaudio==2.3.1+cpu
 
-# OpenCV: HEADLESS ONLY (match latest major to avoid mixed ABI)
+# OpenCV: headless only (newest to “win” on path)
 opencv-python-headless==4.11.0.86
 
-# Core scientific stack
-numpy<2.0
+# Core stack
+numpy==1.26.4
 pandas
 pillow
 pyyaml
@@ -25,4 +23,3 @@ plotly
 streamlit-webrtc
 av==10.0.0
 aiortc==1.7.0
-
