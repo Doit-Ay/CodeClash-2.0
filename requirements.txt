@@ -1,11 +1,25 @@
-streamlit
+streamlit>=1.37
 
-ultralytics
+# Ultralytics + CPU-only PyTorch (avoid CUDA wheels on Streamlit Cloud)
+ultralytics==8.3.30
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.3.1+cpu
+torchvision==0.18.1+cpu
+torchaudio==2.3.1+cpu
 
+# OpenCV: headless only (avoid GUI libs)
+opencv-python-headless==4.10.0.84
+
+# Core scientific stack
+numpy<2.0           # <- prevents ABI mismatches with some wheels
 pandas
+pillow
+pyyaml
+tqdm
+requests
 
+# Your libs
 plotly
-
-opencv-python-headless
-
 streamlit-webrtc
+av==10.0.0          # <- helpful for stable WebRTC video I/O
+aiortc==1.7.0       # <- explicit pin to match streamlit-webrtc well
