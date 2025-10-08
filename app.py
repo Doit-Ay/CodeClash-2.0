@@ -1,6 +1,8 @@
 # EVA Guardian - Object Detection Dashboard
 # Improved Version with functional feedback loops and UX enhancements.
-
+import os
+os.environ["OPENCV_LOG_LEVEL"] = "ERROR"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image, ImageDraw
