@@ -28,6 +28,8 @@ import plotly.express as px
 from io import BytesIO
 from typing import Dict, List, Any, Optional, Tuple, Set
 
+import cv2, streamlit as st
+st.caption(f"cv2: {cv2.__version__} (headless expected if no GUI)")
 
 # --- PAGE CONFIGURATION (with Dark Mode as default) ---
 st.set_page_config(
