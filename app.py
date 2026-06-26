@@ -36,12 +36,12 @@ def main() -> None:
         st.session_state.page = "Dashboard"
 
     # ── Navigation Buttons ──────────────────────────────────────────
-    _, _, nav1, nav2 = st.columns([4, 2, 1.2, 1])
+    nav1, nav2 = st.columns(2)
     with nav1:
-        if st.button("Dashboard", key="nav_dashboard", use_container_width=True):
+        if st.button("Dashboard", key="nav_dashboard", use_container_width=True, type="primary" if st.session_state.page == "Dashboard" else "secondary"):
             st.session_state.page = "Dashboard"
     with nav2:
-        if st.button("About", key="nav_about", use_container_width=True):
+        if st.button("About", key="nav_about", use_container_width=True, type="primary" if st.session_state.page == "About" else "secondary"):
             st.session_state.page = "About"
 
     # ── Sidebar ─────────────────────────────────────────────────────

@@ -21,8 +21,3 @@ requests
 
 # Visualization & UI
 plotly
-streamlit-webrtc
-
-# WebRTC deps
-av>=12.0.0
-aiortc

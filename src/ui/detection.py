@@ -20,28 +20,6 @@ from src.ui.gallery import display_object_gallery
 from src.ui.risk_report import generate_smart_risk_report
 from src.feedback.handler import save_missed_object
 
-try:
-    from streamlit_webrtc import webrtc_streamer, WebRtcMode
-    _HAS_WEBRTC = True
-except ImportError:
-    _HAS_WEBRTC = False
-
-
-# ---------- Video transformer for webcam ----------
-class _VideoTransformer:
-    """Processes video frames for real-time object detection."""
-    def __init__(self, model: YOLO, conf: float):
-        self.model = model
-        self.conf = conf
-
-    def recv(self, frame):
-        import av
-        img = frame.to_ndarray(format="bgr24")
-        for r in self.model(img, conf=self.conf, stream=True, verbose=False):
-            img = r.plot()
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
-
-
 # ---------- Public handlers ----------
 def handle_live_demo(model: YOLO, confidence: float) -> None:
     """Top-level live-demo section with source toggle."""
@@ -55,23 +33,14 @@ def handle_live_demo(model: YOLO, confidence: float) -> None:
         _handle_webcam(model, confidence)
 
 
-# ---------- Single image ----------
-def _handle_single_image(model: YOLO, confidence: float) -> None:
-    uploaded = st.file_uploader(
-        "Upload an Image", type=["jpg", "jpeg", "png"],
-        label_visibility="collapsed", key="single_file_uploader",
-    )
-    if uploaded is None:
-        st.session_state.pop("current_file_id", None)
-        st.session_state.pop("reported_falses", None)
-        return
-
-    file_id = f"{uploaded.name}-{uploaded.size}"
+# ---------- Core Image Processing ----------
+def _process_and_display_image(model: YOLO, confidence: float, source_file, source_name: str, file_id: str) -> None:
+    """Processes a single image (from upload or camera) and displays results."""
     if st.session_state.get("current_file_id") != file_id:
         st.session_state.current_file_id = file_id
         st.session_state.reported_falses = set()
 
-    image = Image.open(uploaded).convert("RGB")
+    image = Image.open(source_file).convert("RGB")
     image = resize_image(image)
 
     col1, col2 = st.columns(2)
@@ -92,16 +61,32 @@ def _handle_single_image(model: YOLO, confidence: float) -> None:
         st.download_button(
             "Download Annotated Image",
             data=BytesIO(buf),
-            file_name=f"annotated_{uploaded.name}",
+            file_name=f"annotated_{source_name}",
             mime="image/png",
+            key=f"dl_{file_id}"
         )
 
     st.divider()
     generate_smart_risk_report(results[0])
     st.divider()
-    display_object_gallery(image, results[0], uploaded.name)
+    display_object_gallery(image, results[0], source_name)
     st.divider()
-    _handle_missed_correction(model, image, uploaded)
+    _handle_missed_correction(model, image, source_file)
+
+
+# ---------- Single image ----------
+def _handle_single_image(model: YOLO, confidence: float) -> None:
+    uploaded = st.file_uploader(
+        "Upload an Image", type=["jpg", "jpeg", "png"],
+        label_visibility="collapsed", key="single_file_uploader",
+    )
+    if uploaded is None:
+        st.session_state.pop("current_file_id", None)
+        st.session_state.pop("reported_falses", None)
+        return
+
+    file_id = f"upload_{uploaded.name}_{uploaded.size}"
+    _process_and_display_image(model, confidence, uploaded, uploaded.name, file_id)
 
 
 # ---------- Batch processing ----------
@@ -161,23 +146,14 @@ def _handle_batch_images(model: YOLO, confidence: float) -> None:
 
 # ---------- Webcam ----------
 def _handle_webcam(model: YOLO, confidence: float) -> None:
-    if not _HAS_WEBRTC:
-        st.warning("Webcam support requires the `streamlit-webrtc` package.")
+    st.info("Take a picture using your webcam for instant analysis.")
+    camera_image = st.camera_input("Camera", label_visibility="collapsed")
+    
+    if camera_image is None:
         return
-
-    st.info("Click 'Start' to begin live detection from your webcam. The stream may take a few seconds to initialize.")
-    rtc_config = {"iceServers": [
-        {"urls": ["stun:stun.l.google.com:19302"]},
-        {"urls": ["stun:stun1.l.google.com:19302"]},
-    ]}
-    webrtc_streamer(
-        key="webcam-streamer",
-        mode=WebRtcMode.SENDRECV,
-        rtc_configuration=rtc_config,
-        video_frame_callback=_VideoTransformer(model, confidence).recv,
-        media_stream_constraints={"video": True, "audio": False},
-        async_processing=True,
-    )
+        
+    file_id = f"camera_{camera_image.size}"
+    _process_and_display_image(model, confidence, camera_image, "camera_capture.jpg", file_id)
 
 
 # ---------- Missed object correction ----------
