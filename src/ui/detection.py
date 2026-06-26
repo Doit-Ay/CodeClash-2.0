@@ -147,13 +147,22 @@ def _handle_batch_images(model: YOLO, confidence: float) -> None:
 # ---------- Webcam ----------
 def _handle_webcam(model: YOLO, confidence: float) -> None:
     st.info("Take a picture using your webcam for instant analysis.")
-    camera_image = st.camera_input("Camera", label_visibility="collapsed")
     
-    if camera_image is None:
-        return
+    if "webcam_active" not in st.session_state:
+        st.session_state.webcam_active = False
+
+    if st.button("Start Camera" if not st.session_state.webcam_active else "Stop Camera", key="webcam_toggle"):
+        st.session_state.webcam_active = not st.session_state.webcam_active
+        st.rerun()
+
+    if st.session_state.webcam_active:
+        camera_image = st.camera_input("Camera", label_visibility="collapsed")
         
-    file_id = f"camera_{camera_image.size}"
-    _process_and_display_image(model, confidence, camera_image, "camera_capture.jpg", file_id)
+        if camera_image is None:
+            return
+            
+        file_id = f"camera_{camera_image.size}"
+        _process_and_display_image(model, confidence, camera_image, "camera_capture.jpg", file_id)
 
 
 # ---------- Missed object correction ----------
