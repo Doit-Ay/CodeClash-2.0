@@ -44,7 +44,7 @@ def handle_live_demo(model: YOLO, confidence: float) -> None:
     """Top-level live-demo section with source toggle."""
     mode = st.radio(
         "Select Input Source", 
-        ["Single Image", "Batch Upload", "Live Webcam", "Snapshot Camera (Mobile Fallback)"], 
+        ["Single Image", "Batch Upload", "Live Webcam"], 
         horizontal=True,
         label_visibility="collapsed"
     )
@@ -54,10 +54,8 @@ def handle_live_demo(model: YOLO, confidence: float) -> None:
         _handle_single_image(model, confidence)
     elif mode == "Batch Upload":
         _handle_batch_images(model, confidence)
-    elif mode == "Live Webcam":
-        _handle_webcam(model, confidence)
     else:
-        _handle_snapshot(model, confidence)
+        _handle_webcam(model, confidence)
 
 
 # ---------- Core Image Processing ----------
@@ -197,18 +195,6 @@ def _handle_webcam(model: YOLO, confidence: float) -> None:
         },
         async_processing=True,
     )
-
-
-# ---------- Snapshot Camera (Fallback) ----------
-def _handle_snapshot(model: YOLO, confidence: float) -> None:
-    st.info("This is a native Streamlit camera capture. It takes a single photo and works reliably on all networks (no TURN server required).")
-    camera_image = st.camera_input("Camera", label_visibility="collapsed")
-    
-    if camera_image is None:
-        return
-        
-    file_id = f"snapshot_{camera_image.size}"
-    _process_and_display_image(model, confidence, camera_image, "snapshot.jpg", file_id)
 
 
 # ---------- Missed object correction ----------
