@@ -20,7 +20,7 @@ st.set_page_config(
     page_title="EVA Guardian",
     page_icon="EVA",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 

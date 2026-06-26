@@ -52,6 +52,65 @@ def get_premium_css() -> str:
         background: #4caf50;
         border-radius: 50%;
     }
+
+    /* WebRTC video container — fill width */
+    video {
+        width: 100% !important;
+        border-radius: 8px;
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+        /* Tighter padding on mobile */
+        div.block-container {
+            padding-top: 1rem !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+
+        /* Stack header vertically */
+        .eva-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.6rem;
+            padding: 0.8rem 1rem;
+        }
+        .eva-header .title { font-size: 1.25rem; }
+        .eva-header .subtitle { font-size: 0.75rem; }
+
+        /* Radio buttons: wrap and shrink text */
+        div[data-testid="stRadio"] > div {
+            flex-wrap: wrap !important;
+            gap: 0.4rem !important;
+        }
+        div[data-testid="stRadio"] label {
+            font-size: 0.8rem !important;
+            padding: 0.3rem 0.6rem !important;
+        }
+
+        /* Stack side-by-side columns on mobile */
+        div[data-testid="column"] {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+
+        /* Buttons: full width */
+        .stButton > button {
+            width: 100% !important;
+            font-size: 0.85rem !important;
+        }
+
+        /* Metrics: slightly smaller */
+        div[data-testid="stMetricValue"] {
+            font-size: 1.2rem !important;
+        }
+
+        /* Sidebar collapsed by default on mobile (Streamlit handles this) */
+        section[data-testid="stSidebar"] {
+            min-width: 240px !important;
+            max-width: 240px !important;
+        }
+    }
     </style>
     """
 

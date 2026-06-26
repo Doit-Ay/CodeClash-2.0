@@ -175,10 +175,32 @@ def _handle_webcam(model: YOLO, confidence: float) -> None:
         st.warning("Webcam support requires the `streamlit-webrtc` package.")
         return
 
-    st.info("Click 'START' below to begin live detection from your webcam. The stream may take a few seconds to initialize.")
+    st.info("Click **START** below to begin live detection. The stream may take a few seconds to connect.")
+
+    # Free TURN relay servers (Open Relay Project by Metered.ca)
+    # STUN-only fails on mobile/strict networks; TURN relays the video through a server
     rtc_config = {"iceServers": [
         {"urls": ["stun:stun.l.google.com:19302"]},
-        {"urls": ["stun:stun1.l.google.com:19302"]},
+        {
+            "urls": "turn:global.relay.metered.ca:80",
+            "username": "e8dd65b92aee3bfb5a801075",
+            "credential": "kJBNcsj6FULkRqvR",
+        },
+        {
+            "urls": "turn:global.relay.metered.ca:80?transport=tcp",
+            "username": "e8dd65b92aee3bfb5a801075",
+            "credential": "kJBNcsj6FULkRqvR",
+        },
+        {
+            "urls": "turn:global.relay.metered.ca:443",
+            "username": "e8dd65b92aee3bfb5a801075",
+            "credential": "kJBNcsj6FULkRqvR",
+        },
+        {
+            "urls": "turns:global.relay.metered.ca:443?transport=tcp",
+            "username": "e8dd65b92aee3bfb5a801075",
+            "credential": "kJBNcsj6FULkRqvR",
+        },
     ]}
     webrtc_streamer(
         key="webcam-streamer",
@@ -187,11 +209,10 @@ def _handle_webcam(model: YOLO, confidence: float) -> None:
         video_frame_callback=_VideoTransformer(model, confidence).recv,
         media_stream_constraints={
             "video": {
-                "facingMode": "environment",
                 "width": {"ideal": 640},
-                "height": {"ideal": 480}
-            }, 
-            "audio": False
+                "height": {"ideal": 480},
+            },
+            "audio": False,
         },
         async_processing=True,
     )
