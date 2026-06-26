@@ -1,7 +1,6 @@
 # EVA Guardian: AI-Powered Safety Assistant for Space Stations
 
-**A Submission for the Duality AI - Space Station Hackathon**
-
+Live - https://codeclash-20-7htdzqnw3juzr8xw3m9aqc.streamlit.app/
 ---
 
 ## 1. Project Description
