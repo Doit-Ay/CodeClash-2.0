@@ -185,7 +185,14 @@ def _handle_webcam(model: YOLO, confidence: float) -> None:
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=rtc_config,
         video_frame_callback=_VideoTransformer(model, confidence).recv,
-        media_stream_constraints={"video": True, "audio": False},
+        media_stream_constraints={
+            "video": {
+                "facingMode": "environment",
+                "width": {"ideal": 640},
+                "height": {"ideal": 480}
+            }, 
+            "audio": False
+        },
         async_processing=True,
     )
 
