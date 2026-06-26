@@ -20,16 +20,41 @@ from src.ui.gallery import display_object_gallery
 from src.ui.risk_report import generate_smart_risk_report
 from src.feedback.handler import save_missed_object
 
+try:
+    from streamlit_webrtc import webrtc_streamer, WebRtcMode
+    _HAS_WEBRTC = True
+except ImportError:
+    _HAS_WEBRTC = False
+
+class _VideoTransformer:
+    """Processes video frames for real-time object detection."""
+    def __init__(self, model: YOLO, conf: float):
+        self.model = model
+        self.conf = conf
+
+    def recv(self, frame):
+        import av
+        img = frame.to_ndarray(format="bgr24")
+        for r in self.model(img, conf=self.conf, stream=True, verbose=False):
+            img = r.plot()
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
+
 # ---------- Public handlers ----------
 def handle_live_demo(model: YOLO, confidence: float) -> None:
     """Top-level live-demo section with source toggle."""
-    tab_img, tab_batch, tab_cam = st.tabs(["Single Image", "Batch Upload", "Webcam"])
+    mode = st.radio(
+        "Select Input Source", 
+        ["Single Image", "Batch Upload", "Live Webcam"], 
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    st.divider()
 
-    with tab_img:
+    if mode == "Single Image":
         _handle_single_image(model, confidence)
-    with tab_batch:
+    elif mode == "Batch Upload":
         _handle_batch_images(model, confidence)
-    with tab_cam:
+    else:
         _handle_webcam(model, confidence)
 
 
@@ -146,23 +171,23 @@ def _handle_batch_images(model: YOLO, confidence: float) -> None:
 
 # ---------- Webcam ----------
 def _handle_webcam(model: YOLO, confidence: float) -> None:
-    st.info("Take a picture using your webcam for instant analysis.")
-    
-    if "webcam_active" not in st.session_state:
-        st.session_state.webcam_active = False
+    if not _HAS_WEBRTC:
+        st.warning("Webcam support requires the `streamlit-webrtc` package.")
+        return
 
-    if st.button("Start Camera" if not st.session_state.webcam_active else "Stop Camera", key="webcam_toggle"):
-        st.session_state.webcam_active = not st.session_state.webcam_active
-        st.rerun()
-
-    if st.session_state.webcam_active:
-        camera_image = st.camera_input("Camera", label_visibility="collapsed")
-        
-        if camera_image is None:
-            return
-            
-        file_id = f"camera_{camera_image.size}"
-        _process_and_display_image(model, confidence, camera_image, "camera_capture.jpg", file_id)
+    st.info("Click 'START' below to begin live detection from your webcam. The stream may take a few seconds to initialize.")
+    rtc_config = {"iceServers": [
+        {"urls": ["stun:stun.l.google.com:19302"]},
+        {"urls": ["stun:stun1.l.google.com:19302"]},
+    ]}
+    webrtc_streamer(
+        key="webcam-streamer",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=rtc_config,
+        video_frame_callback=_VideoTransformer(model, confidence).recv,
+        media_stream_constraints={"video": True, "audio": False},
+        async_processing=True,
+    )
 
 
 # ---------- Missed object correction ----------
