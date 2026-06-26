@@ -1,0 +1,15 @@
+[
+  {
+    "source_image": "basic-fire-fighting-evacuation-fire-drill-simulation-training-safety-condominium-factory-scaled.jpg",
+    "incorrectly_detected_as": "ToolBox",
+    "bounding_box": [
+      606.990478515625,
+      0.0,
+      1074.911376953125,
+      452.1034851074219
+    ],
+    "confidence": 0.718963086605072,
+    "feedback_type": "false_positive",
+    "timestamp": 1782386939.2792454
+  }
+]

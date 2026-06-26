@@ -1,3 +1,4 @@
+# EVA Guardian - Dependencies
 streamlit>=1.37
 
 # Ultralytics + CPU-only PyTorch
@@ -7,7 +8,7 @@ torch==2.3.1+cpu
 torchvision==0.18.1+cpu
 torchaudio==2.3.1+cpu
 
-# OpenCV: headless only (newest to “win” on path)
+# OpenCV: headless only
 opencv-python-headless==4.11.0.86
 
 # Core stack
@@ -18,9 +19,10 @@ pyyaml
 tqdm
 requests
 
-# Your libs
+# Visualization & UI
 plotly
 streamlit-webrtc
 
+# WebRTC deps
 av>=12.0.0
 aiortc
