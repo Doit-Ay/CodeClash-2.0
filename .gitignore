@@ -19,12 +19,6 @@ Thumbs.db
 # train_log.txt
 
 # --- CRUCIAL: IGNORE THE LARGE DATASET FOLDER ---
-data/
-feedback/
-new_user_images/
-predictions/
-
-
 /data/
 /feedback/
 /new_user_images/
